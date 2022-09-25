@@ -11,9 +11,9 @@ const { getCategories,
         deleteCommentById,
         getApi
       } = require('./controllers/games');
-
-app.use(cors());
+      
 const app = express();
+app.use(cors());
 app.use(express.json());
 
 app.get('/api/categories', getCategories);
