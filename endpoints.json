@@ -16,7 +16,7 @@
   },
   "GET /api/reviews": {
     "description": "serves an array of all reviews, with the ability to sort by any coloumn in ascending or descending order, as well as filter by category",
-    "queries": ["category", "sort_by", "order"],
+    "queries": ["category", "sort_by", "order", "limit", "p"],
     "exampleResponse": {
       "reviews": [
         {
@@ -83,7 +83,7 @@
           "description": "adds a comment belonging to the input review_id and returns the added comment",
           "queries": [],
           "exampleResponse": {
-              "review": {
+              "comment": {
                       "comment_id": 1,
                       "body": "I loved this game too!",
                       "votes": 16,
@@ -97,5 +97,71 @@
             "description": "deletes the comment belonging to the input comment id",
             "queries": [],
             "exampleResponse": {}
-            }
-  }
+            },
+            "GET /api/users/:username": {
+              "description": "responds with the user object belonging to the passed username",
+              "queries": [],
+              "exampleResponse": {
+                  "user": {
+                    "username": "tickle122",
+                    "name": "Tom Tickle",
+                    "avatar_url": "https://vignette.wikia.nocookie.net/mrmen/images/d/d6/Mr-Tickle-9a.png/revision/latest?cb=20180127221953"
+                }
+              }
+            },
+            "PATCH /api/comments/:comment_id": {
+              "description": "increases or decreases the comments votes belonging to the input comment_id and, responds with the updated comment",
+              "queries": [],
+              "exampleResponse": {
+                  "comment": {
+                    "comment_id": 1,
+                    "body": "I loved this game too!",
+                    "votes": 17,
+                    "author": "mallionaire",
+                    "review_id": 3,
+                    "created_at": "Thu Jul 07 2022 10:33:23 GMT+0100 (British Summer Time)"
+                  }
+              }
+            },
+            "POST /api/reviews": {
+              "description": "posts and returns a new review",
+              "queries": [],
+              "exampleResponse": {
+              "review": {
+                  "review_id": 2,
+                  "title": "Jenga",
+                  "category": "dexterity",
+                  "designer": "Leslie Scott",
+                  "owner": "philippaclaire9",
+                  "review_body": "Fiddly fun for all the family",
+                  "created_at": "Mon Jan 18 2021 10:01:41 GMT+0000 (Greenwich Mean Time)",
+                  "votes": 5
+                }
+          }
+       },
+       "GET /api/reviews/:review_id/comments": {
+        "description": "returns an array of all the comments belonging to the input review_id",
+              "queries": ["limit", "p"],
+              "exampleResponse": {
+                "comments": {
+                        "comment_id": 1,
+                        "body": "I loved this game too!",
+                        "votes": 16,
+                        "author": "mallionaire",
+                        "review_id": 3,
+                        "created_at": "Thu Jul 07 2022 10:33:23 GMT+0100 (British Summer Time)"
+                      }
+                }
+       },
+       "POST /api/users": {
+        "description": "posts and returns a new user",
+        "queries": [],
+        "exampleResponse": {
+        "user": {
+            "username": "tickle122",
+            "name": "Jim Stevens",
+            "avatar_url": "https://vignette.wikia.nocookie.net/mrmen/images/d/d6/Mr-Tickle-9a.png/revision/latest?cb=20180127221953"
+          }
+        }
+      }
+}

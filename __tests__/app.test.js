@@ -84,7 +84,7 @@ describe('GET api/reviews/:review_id', () => {
 
 describe('PATCH api/reviews/:review_id', () => {
     describe('happy path', () => {
-        test('PATCH 200: updates an existing review to increase or decrease the review/s votes by the given amount', () => {
+        test('PATCH 200: updates an existing review to increase or decrease the review\'s votes by the given amount', () => {
           const newVote = {
             inc_votes : 1
           }
@@ -131,7 +131,7 @@ describe('PATCH api/reviews/:review_id', () => {
       });
     });
     describe('error handling', () => {
-        test('404 status: returns the message "no review found under id __" when presented with a path that doesn\'t exist', () => {
+        test('404 status: returns the message "No review found under id __" when presented with a path that doesn\'t exist', () => {
             const newVote = {
                 inc_votes : 1
               }
@@ -140,7 +140,7 @@ describe('PATCH api/reviews/:review_id', () => {
           .send(newVote)
           .expect(404)
           .then(({body}) => {
-            expect(body.msg).toBe('no review found under id 999');
+            expect(body.msg).toBe('No review found under id 999');
           });
         });  
         test('400 status: returns a bad path request', () => {
@@ -266,6 +266,23 @@ describe('GET api/reviews', () => {
          expect(body.reviews).toEqual([]);
       });
     });
+    test('200 status: returns an array containing a limited number of reviews when a limit query is added', () => {
+      return request(app)
+      .get("/api/reviews?limit=10")
+      .expect(200)
+      .then(({body}) => {
+         expect(body.reviews.length).toBe(10)
+      });
+    });
+    test('200 status: returns an array containing a limited number of reviews when a limit query is added', () => {
+      return request(app)
+      .get("/api/reviews?limit=10&p=2")
+      .expect(200)
+      .then(({body}) => {
+         expect(body.reviews.length).toBe(3);
+      });
+    });
+    
   });
   describe('error handling', () => {
     test('400 status: returns the message "Invalid sort query, ___ does not exist" when that column doesn\t exist', () => {
@@ -292,6 +309,22 @@ describe('GET api/reviews', () => {
         expect(body.msg).toBe('No reviews found under the category name: category');
       });
     });
+    test('400 status: returns the message "Limit or page must be a number" when limit is not a number', () => {
+      return request(app)
+      .get("/api/reviews?limit=ten")
+      .expect(400)
+      .then(({body}) => {
+         expect(body.msg).toBe('Limit or page must be a number');
+      });
+    });
+    test('400 status: returns the message "Limit or page must be a number" when page is not a number', () => {
+      return request(app)
+      .get("/api/reviews?limit=10&p=one")
+      .expect(400)
+      .then(({body}) => {
+         expect(body.msg).toBe('Limit or page must be a number');
+      });
+    });
   });
 });
 
@@ -313,16 +346,48 @@ describe('GET api/reviews/:review_id/comments', () => {
         });
       });
     });
+    test('200 status: responds with a limited array of comments', () => {
+      return request(app)
+      .get('/api/reviews/2/comments?limit=2')
+      .expect(200)
+      .then((body) => {
+        expect(body._body.comments.length).toBe(2);
+      });
+      });
+      test('200 status: responds with a limited array of comments seperated into pages', () => {
+        return request(app)
+        .get('/api/reviews/2/comments?limit=2&p=2')
+        .expect(200)
+        .then((body) => {
+          expect(body._body.comments.length).toBe(1);
+        });
+        });
   });
   describe('error handling', () => {
-    test('404 status: returns the message "no review found under id __" when presented with a path that does not exist', () => {
+    test('404 status: returns the message "No review found under id __" when presented with a path that does not exist', () => {
       return request(app)
       .get('/api/reviews/999/comments')
       .expect(404)
       .then(({body}) => {
-        expect(body.msg).toBe('no review found under id 999');
+        expect(body.msg).toBe('No review found under id 999');
       });
     });
+    test('400 status: responds with the messasge "Limit or page must be a number" if page is not a number', () => {
+      return request(app)
+      .get('/api/reviews/2/comments?limit=2&p=two')
+      .expect(400)
+      .then((body) => {
+        expect(body._body.msg).toBe('Limit or page must be a number');
+      });
+      });
+      test('400 status: responds with the messasge "Limit or page must be a number" if limit is not a number', () => {
+        return request(app)
+        .get('/api/reviews/2/comments?limit=two&p=2')
+        .expect(400)
+        .then((body) => {
+          expect(body._body.msg).toBe('Limit or page must be a number');
+        });
+        });
   });
 });
 
@@ -443,6 +508,342 @@ describe('GET /api', () => {
     .expect(200)
     .then((res) => {
       expect(res.body).toEqual(endpoints);
-    })
+    });
+  });
+});
+
+describe('GET /api/users/:username', () => {
+  describe('happy path', () => {
+    test('200 status: responds with the user object belonging to the passed username', () => {
+      return request(app)
+      .get('/api/users/mallionaire')
+      .expect(200)
+      .then((body) => {
+        expect(body._body.user).toEqual({
+          username: 'mallionaire',
+          name: 'haz',
+          avatar_url:
+            'https://www.healthytherapies.com/wp-content/uploads/2016/06/Lime3.jpg'
+        });
+      });
+    });
+  });
+  describe('error handling', () => {
+    test('404 status: returns the message "No user found under the username ___" when there are no users with the input username', () => {
+      return request(app)
+      .get('/api/users/ballionaire')
+      .expect(404)
+      .then((body) => {
+        expect(body._body.msg).toBe('No user found under the username ballionaire');
+      });
+    });
+  });
+});
+
+describe('PATCH /api/comments/:comment_id', () => {
+  describe('happy path', () => {
+    test('200 status: updates an existing comment to increase or decrease the comment\'s votes by the given amount', () => {
+      const newVotes = { inc_votes: 1 };
+      return request(app)
+      .patch('/api/comments/1')
+      .send(newVotes)
+      .expect(200)
+      .then((body) => {
+        expect(body._body.comment).toEqual({
+          comment_id: 1,
+          body: 'I loved this game too!',
+          votes: 17,
+          author: 'bainesface',
+          review_id: 2,
+          created_at: 'Wed Nov 22 2017 12:43:33 GMT+0000 (Greenwich Mean Time)'
+        });
+      });
+    });
+    test('200 status: updates an existing comment to increase or decrease the comment\'s votes by the given amount, ignores other properties on the patch', () => {
+      const newVotes = { inc_votes: 1, body: 'new body' };
+      return request(app)
+      .patch('/api/comments/1')
+      .send(newVotes)
+      .expect(200)
+      .then((body) => {
+        expect(body._body.comment).toEqual({
+          comment_id: 1,
+          body: 'I loved this game too!',
+          votes: 17,
+          author: 'bainesface',
+          review_id: 2,
+          created_at: 'Wed Nov 22 2017 12:43:33 GMT+0000 (Greenwich Mean Time)'
+        });
+      });
+    });
+  });
+  describe('error handling', () => {
+    test('404 status: returns the message "No comment found under id __" when presented with a path that doesn\'t exist', () => {
+      const newVotes = { inc_votes: 1 };
+      return request(app)
+      .patch('/api/comments/999')
+      .send(newVotes)
+      .expect(404)
+      .then((body) => {
+        expect(body._body.msg).toEqual('No comment found under id 999')
+      });
+    });
+    test('400 status: returns the mmessage "bad request" when comment_id is not a number', () => {
+      const newVotes = { inc_votes: 1 };
+      return request(app)
+      .patch('/api/comments/number')
+      .send(newVotes)
+      .expect(400)
+      .then((body) => {
+        expect(body._body.msg).toBe('bad request')
+      });
+    });
+    test('400 status: returns the message "Invalid patch request, please reformat your patch" when given a patch that does not include inc_votes', () => {
+      const newVotes = { inc_motes: 1 };
+      return request(app)
+      .patch('/api/comments/1')
+      .send(newVotes)
+      .expect(400)
+      .then((body) => {
+        expect(body._body.msg).toBe('Invalid patch request, please reformat your patch')
+      });
+    });
+    test('400 status: returns the message "Invalid patch request, please reformat your patch" when given a patch in which inc_votes is not a number', () => {
+      const newVotes = { inc_votes: 'number' };
+      return request(app)
+      .patch('/api/comments/1')
+      .send(newVotes)
+      .expect(400)
+      .then((body) => {
+        expect(body._body.msg).toBe('Invalid patch request, please reformat your patch')
+      });
+    });
+  });
+});
+
+describe('POST /api/reviews', () => {
+  describe('happy path', () => {
+    test('201 status: responds with the newly added review', () => {
+      const newReview = {
+        title: 'Culture a Love of Agriculture With Agricola',
+        designer: 'Uwe Rosenberg',
+        owner: 'mallionaire',
+        review_body: "Few games are equiped to fill a player with such a defined sense of mild-peril, but a friendly game of Jenga will turn the mustn't-make-it-fall anxiety all the way up to 11! Fiddly fun for all the family, this game needs little explaination. Whether you're a player who chooses to play it safe, or one who lives life on the edge, eventually the removal of blocks will destabilise the tower and all your Jenga dreams come tumbling down.",
+        category: 'dexterity'
+      };
+      return request(app)
+      .post('/api/reviews')
+      .send(newReview)
+      .expect(201)
+      .then((body) => {
+        expect(body._body.review).toHaveProperty('review_id');
+        expect(body._body.review).toHaveProperty('title');
+        expect(body._body.review).toHaveProperty('designer');
+        expect(body._body.review).toHaveProperty('owner');
+        expect(body._body.review).toHaveProperty('review_body');
+        expect(body._body.review).toHaveProperty('category');
+        expect(body._body.review).toHaveProperty('votes');
+        expect(body._body.review).toHaveProperty('created_at');
+      });
+    });
+  });
+  describe('error handling', () => {
+    test('400 status: responds with the message "Invalid post request, please reformat your post" when a title is missing', () => {
+      const newReview = {
+        designer: 'Uwe Rosenberg',
+        owner: 'mallionaire',
+        review_body: "Few games are equiped to fill a player with such a defined sense of mild-peril, but a friendly game of Jenga will turn the mustn't-make-it-fall anxiety all the way up to 11! Fiddly fun for all the family, this game needs little explaination. Whether you're a player who chooses to play it safe, or one who lives life on the edge, eventually the removal of blocks will destabilise the tower and all your Jenga dreams come tumbling down.",
+        category: 'dexterity'
+      };
+      return request(app)
+      .post('/api/reviews')
+      .send(newReview)
+      .expect(400)
+      .then((body) => {
+        expect(body._body.msg).toBe('Invalid post request, please reformat your post');
+      });
+    });
+
+    test('400 status: responds with the message "Invalid post request, please reformat your post" when a owner is missing', () => {
+      const newReview = {
+        title: 'Culture a Love of Agriculture With Agricola',
+        designer: 'Uwe Rosenberg',
+        review_body: "Few games are equiped to fill a player with such a defined sense of mild-peril, but a friendly game of Jenga will turn the mustn't-make-it-fall anxiety all the way up to 11! Fiddly fun for all the family, this game needs little explaination. Whether you're a player who chooses to play it safe, or one who lives life on the edge, eventually the removal of blocks will destabilise the tower and all your Jenga dreams come tumbling down.",
+        category: 'dexterity'
+      };
+      return request(app)
+      .post('/api/reviews')
+      .send(newReview)
+      .expect(400)
+      .then((body) => {
+        expect(body._body.msg).toBe('Invalid post request, please reformat your post');
+      });
+    });
+    test('400 status: responds with the message "Invalid post request, please reformat your post" when a review_body is missing', () => {
+      const newReview = {
+        title: 'Culture a Love of Agriculture With Agricola',
+        designer: 'Uwe Rosenberg',
+        owner: 'mallionaire',
+        category: 'dexterity'
+      };
+      return request(app)
+      .post('/api/reviews')
+      .send(newReview)
+      .expect(400)
+      .then((body) => {
+        expect(body._body.msg).toBe('Invalid post request, please reformat your post');
+      });
+    });
+    test('400 status: responds with the message "Invalid post request, please reformat your post" when a category is missing', () => {
+      const newReview = {
+        title: 'Culture a Love of Agriculture With Agricola',
+        designer: 'Uwe Rosenberg',
+        owner: 'mallionaire',
+        review_body: "Few games are equiped to fill a player with such a defined sense of mild-peril, but a friendly game of Jenga will turn the mustn't-make-it-fall anxiety all the way up to 11! Fiddly fun for all the family, this game needs little explaination. Whether you're a player who chooses to play it safe, or one who lives life on the edge, eventually the removal of blocks will destabilise the tower and all your Jenga dreams come tumbling down."
+      };
+      return request(app)
+      .post('/api/reviews')
+      .send(newReview)
+      .expect(400)
+      .then((body) => {
+        expect(body._body.msg).toBe('Invalid post request, please reformat your post');
+      });
+    });
+     test('400 status: responds with the message "Invalid post request, please reformat your post" when the title is not a string', () => {
+      const newReview = {
+        title: 1,
+        designer: 'Uwe Rosenberg',
+        owner: 'mallionaire',
+        review_body: "Few games are equiped to fill a player with such a defined sense of mild-peril, but a friendly game of Jenga will turn the mustn't-make-it-fall anxiety all the way up to 11! Fiddly fun for all the family, this game needs little explaination. Whether you're a player who chooses to play it safe, or one who lives life on the edge, eventually the removal of blocks will destabilise the tower and all your Jenga dreams come tumbling down.",
+        category: 'dexterity'
+      };
+      return request(app)
+      .post('/api/reviews')
+      .send(newReview)
+      .expect(400)
+      .then((body) => {
+        expect(body._body.msg).toBe('Invalid post request, please reformat your post');
+      });
+    });
+    test('400 status: responds with the message "Invalid post request, please reformat your post" when the owner is not a string', () => {
+      const newReview = {
+        title: 'Culture a Love of Agriculture With Agricola',
+        designer: 'Uwe Rosenberg',
+        owner: 3,
+        review_body: "Few games are equiped to fill a player with such a defined sense of mild-peril, but a friendly game of Jenga will turn the mustn't-make-it-fall anxiety all the way up to 11! Fiddly fun for all the family, this game needs little explaination. Whether you're a player who chooses to play it safe, or one who lives life on the edge, eventually the removal of blocks will destabilise the tower and all your Jenga dreams come tumbling down.",
+        category: 'dexterity'
+      };
+      return request(app)
+      .post('/api/reviews')
+      .send(newReview)
+      .expect(400)
+      .then((body) => {
+        expect(body._body.msg).toBe('Invalid post request, please reformat your post');
+      });
+    });
+    test('400 status: responds with the message "Invalid post request, please reformat your post" when the review_body is not a string', () => {
+      const newReview = {
+        title: 'Culture a Love of Agriculture With Agricola',
+        designer: 'Uwe Rosenberg',
+        owner: 'mallionaire',
+        review_body: 4,
+        category: 'dexterity'
+      };
+      return request(app)
+      .post('/api/reviews')
+      .send(newReview)
+      .expect(400)
+      .then((body) => {
+        expect(body._body.msg).toBe('Invalid post request, please reformat your post');
+      });
+    });
+    test('400 status: responds with the message "Invalid post request, please reformat your post" when the category is not a string', () => {
+      const newReview = {
+        title: 'Culture a Love of Agriculture With Agricola',
+        designer: 'Uwe Rosenberg',
+        owner: 'mallionaire',
+        review_body: "Few games are equiped to fill a player with such a defined sense of mild-peril, but a friendly game of Jenga will turn the mustn't-make-it-fall anxiety all the way up to 11! Fiddly fun for all the family, this game needs little explaination. Whether you're a player who chooses to play it safe, or one who lives life on the edge, eventually the removal of blocks will destabilise the tower and all your Jenga dreams come tumbling down.",
+        category: 5
+      };
+      return request(app)
+      .post('/api/reviews')
+      .send(newReview)
+      .expect(400)
+      .then((body) => {
+        expect(body._body.msg).toBe('Invalid post request, please reformat your post');
+      });
+    });
+  });
+});
+
+describe('POST api/users', () => {
+  describe('happy path', () => {
+    test('201 status: adds a new user and returns the added user', () => {
+      const newUser = {
+        username: 'new user',
+        name: 'Guy',
+      };
+      return request(app)
+      .post('/api/users')
+      .send(newUser)
+      .expect(201)
+      .then(({body}) => {
+        expect(body.user).toHaveProperty('username');
+        expect(body.user).toHaveProperty('name');
+        expect(body.user).toHaveProperty('avatar_url');
+      });
+    });
+  });
+  describe('error handling', () => {
+    test('400 status: responds with the message "Invalid post request, please reformat your post" when a username is missing', () => {
+      const newUser = {
+        name: 'me'
+      };
+      return request(app)
+      .post('/api/users')
+      .send(newUser)
+      .expect(400)
+      .then((body) => {
+        expect(body._body.msg).toBe('Invalid post request, please reformat your post');
+      });
+    });
+    test('400 status: responds with the message "Invalid post request, please reformat your post" when a name is missing', () => {
+      const newUser = {
+        username: 'me'
+      };
+      return request(app)
+      .post('/api/users')
+      .send(newUser)
+      .expect(400)
+      .then((body) => {
+        expect(body._body.msg).toBe('Invalid post request, please reformat your post');
+      });
+    });
+    test('400 status: responds with the message "Invalid post request, please reformat your post" when username is not a string', () => {
+      const newUser = {
+        username: 1,
+        name: 'me'
+      };
+      return request(app)
+      .post('/api/users')
+      .send(newUser)
+      .expect(400)
+      .then((body) => {
+        expect(body._body.msg).toBe('Invalid post request, please reformat your post');
+      });
+    });
+    test('400 status: responds with the message "Invalid post request, please reformat your post" when name is not a string', () => {
+      const newUser = {
+        username: 'me',
+        name: 1
+      };
+      return request(app)
+      .post('/api/users')
+      .send(newUser)
+      .expect(400)
+      .then((body) => {
+        expect(body._body.msg).toBe('Invalid post request, please reformat your post');
+      });
+    });
   });
 });
