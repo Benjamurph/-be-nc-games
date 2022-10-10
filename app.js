@@ -17,7 +17,7 @@ const { getCategories,
       } = require('./controllers/games');
       
 const app = express();
-app.use(cors({ origin: "https://benjamurph-fe-nc-games.herokuapp.com/", credentials: true }));
+app.use(cors({ origin: "https://benjamurph-fe-nc-games.herokuapp.com", credentials: true }));
 app.use(express.json());
 
 app.get('/api/categories', getCategories);
